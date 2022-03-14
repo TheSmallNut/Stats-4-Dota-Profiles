@@ -5,7 +5,7 @@ from discord import Intents
 
 intents = Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents, case_insensitive=True)
 
 
 def loadModules():

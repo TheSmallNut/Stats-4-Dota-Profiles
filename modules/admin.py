@@ -19,8 +19,8 @@ class Admin(commands.Cog, name="Admin"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="reload", aliases=[])
-    @commands.has_permissions(administrator=True)
+    @commands.command(name="reload", aliases=[], hidden=True)
+    @commands.is_owner()
     async def _reload(self, ctx: commands.Context, module="all"):
         if module == "all":
             await reloadAllModules(self, ctx)
@@ -32,8 +32,8 @@ class Admin(commands.Cog, name="Admin"):
             except:
                 await ctx.send(f"No module named **{module}**")
 
-    @commands.command(name="load")
-    @commands.has_permissions(administrator=True)
+    @commands.command(name="load", hidden=True)
+    @commands.is_owner()
     async def _load(self, ctx: commands.Context, module):
         try:
             self.bot.load_extension(f"modules.{module.lower()}")
