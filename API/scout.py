@@ -1,4 +1,3 @@
-from matplotlib.image import thumbnail
 import requests
 from bs4 import BeautifulSoup
 import json
