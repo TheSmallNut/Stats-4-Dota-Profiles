@@ -82,10 +82,14 @@ def playerProfile(account_id):
     icon_url = playerData['profile']['avatar']
     rank = playerData['rank_tier']
     steam = playerData['profile']['profileurl']
+    leaderboard = None
+    if int(rank) == 80:
+        leaderboard = playerData['leaderboard_rank']
     return {
         'playerName': playerName,
         'thumbnail': thumbnail,
         'rank': rank,
+        'leaderboard': leaderboard,
         'steam': steam,
         'icon_url': icon_url
     }
