@@ -1,0 +1,20 @@
+call Scout on team -> grabs team info and makes embeds for the team -> grabs players and makes embeds for them ->  
+
+
+
+function Scout():
+    getTeamInfo()
+
+
+getTeamInfo():
+    requestWebsite()
+    getTeamStats()
+    getPlayersByID()
+    for player in players: 
+        getPlayerStats(playerID)
+        turnPlayerStatsIntoEmbed(playerStats)
+    returns all Data
+
+
+
+

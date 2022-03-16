@@ -48,7 +48,6 @@ def rankToFile(embed, rank, leaderboard):
 def playerEmbed(playerID):
     player = scout.playerProfile(playerID)
     dotabuffLink = scout.IDToDotabuff(playerID)
-    print(player["rank"])
     embed = discord.Embed(
         title=f'{player["playerName"]}', url=f'{dotabuffLink}', color=0xfcba03)
     embed.set_author(
@@ -70,7 +69,7 @@ class stats(commands.Cog, name="Stats"):
     async def _scout(self, ctx: commands.Context, teamLink):
         em = discord.Embed(
             title=f'Getting Info', color=0x00ff00)
-        await ctx.send(embed=em, delete_after=10)
+        await ctx.send(embed=em, delete_after=5)
         dotaIDS = scout.getDotaIDS(teamLink)
         teamLinks = []
         for playerID in dotaIDS:

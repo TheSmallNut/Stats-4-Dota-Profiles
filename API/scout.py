@@ -12,9 +12,7 @@ def getDotaIDS(teamLink):
     page = requests.get(URL)
 
     soup = BeautifulSoup(page.content, "html.parser")
-
     results = soup.find_all(class_="DotabuffIcon")
-
     DotaIDS = []
     for player in results:
         DotaIDS.append(int(player.get('href').split("/")[-1]))
@@ -54,7 +52,7 @@ def leagueStandings(leagueWebsiteData):
             "Name": teamData[1].getText(),
             "Wins": teamData[2].getText(),
             "Place": teamData[0].getText(),
-            "Team_Link": "https://dota.playon.gg/" + teamData[1].find('a')['href']
+            "Team_Link": "https://dota.playon.gg" + teamData[1].find('a')['href']
         })
     return teamsList
 
@@ -64,13 +62,6 @@ def IDToDotabuff(id, esports=True):
         return f'https://www.dotabuff.com/esports/players/{id}'
     else:
         return f'https://www.dotabuff.com/players/{id}'
-
-
-def recentHeroesPlayed(account_id):
-    url = f'https://api.opendota.com/api/heroes'
-    heroes = requests.get(url).json()
-    url = f'https://api.opendota.com/api/players/{account_id}/recentMatches'
-    recentMatches = requests.get(url).json()
 
 
 def playerProfile(account_id):
