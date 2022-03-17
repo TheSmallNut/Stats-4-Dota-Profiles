@@ -34,8 +34,8 @@ def rankToFile(embed, rank, leaderboard):
         img = Image.open(f"{os.getcwd()}/images/ranks/{rank}.png")
         I1 = ImageDraw.Draw(img)
         textSize = len(str(leaderboard))
-        myFont = ImageFont.truetype('Keyboard.ttf', 40)
-        I1.text((130 - (14 * textSize), 190),
+        myFont = ImageFont.truetype('Arial.ttf', 40)
+        I1.text((145 - (15 * textSize), 190),
                 f"{leaderboard}", fill=(255, 255, 255), font=myFont)
         img.save(f"{os.getcwd()}/images/temp/temp.png")
         file = discord.File(
@@ -67,6 +67,7 @@ class stats(commands.Cog, name="Stats"):
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.has_permissions()
     async def _scout(self, ctx: commands.Context, teamLink):
+        await ctx.message.add_reaction('✅')
         em = discord.Embed(
             title=f'Getting Info', color=0x00ff00)
         await ctx.send(embed=em, delete_after=5)

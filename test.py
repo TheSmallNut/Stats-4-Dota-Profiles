@@ -1,24 +1,15 @@
-import requests
-from bs4 import BeautifulSoup
+import os
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 
 
-def getCaptain(soup):
-    return soup.find_all(class_="col-sm-10")[1].find('a').get('href').split("/")[-1]
-
-
-URL = f'https://dota.playon.gg/teams/14217'
-page = requests.get(URL)
-
-soup = BeautifulSoup(page.content, "html.parser")
-
-
-results = soup.find(class_="rosterholder").find('ul').find_all('li')
-
-DotaIDS = []
-for player in results:
-    DotaIDS.append(int(player.find_all('a')[0].get('href').split("/")[-1]))
-
-toReturn = {
-    'Captain': getCaptain(soup),
-    'Players': DotaIDS
-}
+rank = 81
+img = Image.open(f"{os.getcwd()}/images/ranks/{rank}.png")
+I1 = ImageDraw.Draw(img)
+textSize = 4
+myFont = ImageFont.truetype('arial.ttf', 40)
+I1.text((145 - (15 * textSize), 190),
+        f"4000", fill=(255, 255, 255), font=myFont)
+img.save(f"{os.getcwd()}/images/temp/temp.png")
+img.show()

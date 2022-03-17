@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import API.requesting as requesting
 
 
 def getTeamInfo(teamLink):
@@ -11,7 +12,7 @@ def getTeamInfo(teamLink):
     # Makes the team Embed for discord
     teamEmbed = makeTeamEmbed(teamStats)
     # Scrapes and gets all players on a team and returns their ID's
-    players = getPlayersByID(soupWebsite)
+    players = getPlayerIDs(soupWebsite)
     embeds = {
         'teamEmbed': teamEmbed,
         'playersEmbeds': []
@@ -58,7 +59,7 @@ def getPlayerIDs(websiteInfo):
 # Stats I want: Username, Rank, Profile Photo, Leaderboard Status,
 
 
-def getPlayerStats(player):
+def getPlayerStats(player_id):
     None
 
 # Takes the player stats and returns a Discord Embed to send later

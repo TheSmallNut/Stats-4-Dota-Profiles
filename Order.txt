@@ -17,4 +17,23 @@ getTeamInfo():
 
 
 
+How i want to display
 
+
+Roles:
+Hard support 95%
+Carry 5%
+
+
+Stats to get:
+Core: 75%
+    Safelane = 10%
+    Mid = 75%
+    Offlane = 15%
+Support: 25%
+    Safelane = 65%
+    Mid = 0%
+    Offlane = 35%
+
+
+a

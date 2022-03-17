@@ -12,7 +12,8 @@ def loadModules():
     # Change "cogs" to your folder name
     for filename in os.listdir("./modules"):
         if filename.endswith(".py"):
-            bot.load_extension(f"modules.{filename[:-3]}")
+            if filename != 'Stats copy':
+                bot.load_extension(f"modules.{filename[:-3]}")
 
 
 loadModules()
