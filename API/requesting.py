@@ -20,9 +20,9 @@ def getOpenDotaStats(player_ID):
         'leaderboard': leaderboard,
         'steam_url': steam,
         'icon_url': icon_url,
-        'dotaplus' : dotaplus,  # True / False
-        'country_code' : country_code,
-        'mmr_estimate' : mmr_estimate
+        'dotaplus': dotaplus,  # True / False
+        'country_code': country_code,
+        'mmr_estimate': mmr_estimate
     }
 
 
@@ -31,40 +31,42 @@ def getDotabuffStats(player_ID):
     # Got my own user agent to prevent web-scraping prevention
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.109 Safari/537.36 OPR/84.0.4316.36'}
-    website = requests.get(f'https://www.dotabuff.com/esports/players/{player_ID}', headers = headers)
+    website = requests.get(
+        f'https://www.dotabuff.com/esports/players/{player_ID}', headers=headers)
     # Soup Webiste
     soupWebsite = BeautifulSoup(website.content, "html.parser")
     rolesBar = soupWebsite.find(class_='roles bar')
-    mostCommonRole = {
-        'Core' : {
-            'Total' : 0,
-            'Off Lane' : 0,
-            'Roaming' : 0,
-            'Mid Lane' : 0,
-            'Jungle' : 0,
-            'Safe Lane' : 0
+    roleSplits = {
+        'Core': {
+            'Total': 0,
+            'Off Lane': 0,
+            'Roaming': 0,
+            'Mid Lane': 0,
+            'Jungle': 0,
+            'Safe Lane': 0
         },
-        'Support' : {
-            'Total' : 0,
-            'Off Lane' : 0,
-            'Roaming' : 0,
-            'Mid Lane' : 0,
-            'Jungle' : 0,
-            'Safe Lane' : 0
+        'Support': {
+            'Total': 0,
+            'Off Lane': 0,
+            'Roaming': 0,
+            'Mid Lane': 0,
+            'Jungle': 0,
+            'Safe Lane': 0
         }
     }
-
+    mostCommonRoleTotal = rolesBar.find(
+        class_='sector role index-0').find(class_='label').getText()
+    print(mostCommonRoleTotal)
     supportAndCoreBreakdown = rolesBar.find_all(class_='tooltip')
     for role in supportAndCoreBreakdown:
         whereToAdd = role.find(class_='header').getText().split(" ")[0]
         for currentClass in role:
             if currentClass == "header":
-                print(currentClass)
+                None
 
     #mostCommonSplit = rolesBar.find(class_='sector role index-0').find(class_='label').getText().strip().split(" ")
     #mostCommonRole['Name'] = mostCommonSplit[1]
-    #mostCommonRole['Percentage'] = mostCommonSplit[]
+    # mostCommonRole['Percentage'] = mostCommonSplit[]
 
 
 getDotabuffStats(119088315)
-

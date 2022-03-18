@@ -83,3 +83,39 @@ def playerProfile(account_id):
         'steam': steam,
         'icon_url': icon_url
     }
+
+
+def getAD2LTeams():
+    page = requests.get('https://dota.playon.gg/seasons')
+    soup = BeautifulSoup(page.content, 'html.parser')
+    eachTourney = soup.find(class_='dropdown-menu tourneyDropdown')
+    tourneys = {}
+    for tourney in eachTourney.find_all('li'):
+        endURL = tourney.find('a')['href']
+        tourneyURL = f'https://dota.playon.gg{endURL}'
+        tourneyID = endURL.split("/")[-1]
+        tourneyName = tourney.getText().strip()
+        tourneys[str(tourneyID)] = {
+            'Name': tourneyName,
+            'Teams': [],
+            'ID': str(tourneyID)
+        }
+        website = requests.get(tourneyURL)
+        soupPage = BeautifulSoup(website.content, 'html.parser')
+        teamsInLeague = soupPage.find(
+            class_="table table-hover table-bordered").find('tbody')
+        for team in teamsInLeague('tr'):
+            teamData = team.find_all('td')
+            tourneys[tourneyID]['Teams'].append({
+                "Name": teamData[1].getText(),
+                "Wins": teamData[2].getText(),
+                "Place": teamData[0].getText(),
+                "Team_Link": "https://dota.playon.gg" + teamData[1].find('a')['href'],
+                'Division_Link': tourneyURL,
+                'Division_Number': tourneyURL.split('/')[-1]
+            })
+    print("AD2L Teams Loaded")
+    return tourney
+
+
+getAD2LTeams()

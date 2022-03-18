@@ -7,6 +7,22 @@ from PIL import ImageFont
 import os
 import API.scout as scout
 import datetime
+import validators
+
+allAD2LTeams = scout.getAD2LTeams()
+
+
+def getTeamLink(teamLink):
+    if validators.url(teamLink):
+        if 'https://dota.playon.gg/teams/' in teamLink:
+            return teamLink
+        else:
+            return None
+    else:
+        for team in allAD2LTeams:
+            if team['Name'].lower() == teamLink.lower():
+                return team['Team_Link']
+    return None
 
 
 def immortalRank(rank, leaderboard):
@@ -64,14 +80,20 @@ class stats(commands.Cog, name="Stats"):
         self.bot = bot
 
     @commands.command(name="scout", aliases=[])
-    @commands.cooldown(1, 10, commands.BucketType.guild)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.has_permissions()
-    async def _scout(self, ctx: commands.Context, teamLink):
+    async def _scout(self, ctx: commands.Context, *, team):
+        newTeamLink = getTeamLink(team)
+        if newTeamLink == None:
+            em = discord.Embed(
+                title=f'"{team}" is not a valid team', color=0xff0000)
+            await ctx.send(embed=em, delete_after=5)
+            return
         await ctx.message.add_reaction('✅')
         em = discord.Embed(
-            title=f'Getting Info', color=0x00ff00)
+            title=f'Getting Info on "{team}"', color=0x00ff00)
         await ctx.send(embed=em, delete_after=5)
-        dotaIDS = scout.getDotaIDS(teamLink)
+        dotaIDS = scout.getDotaIDS(newTeamLink)
         teamLinks = []
         for playerID in dotaIDS:
             currentPlayerEmbed = playerEmbed(playerID)
@@ -105,6 +127,18 @@ class stats(commands.Cog, name="Stats"):
             embed = discord.Embed(title=f"Slow it down!",
                                   description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
             await ctx.send(embed=embed)
+
+    @commands.command(name='teams')
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    async def _teams(self, ctx: commands.Context):
+        em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
+        for league in allAD2LTeams:
+            teamsInLeague = ""
+            for team in league['Teams']:
+                teamsInLeague += team['Name'] + "\n"
+            em.add_field(name=f'{league["name"]}', value=teamsInLeague)
+
+        await ctx.send(embed=em)
 
 
 def setup(bot):
