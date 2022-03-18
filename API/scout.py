@@ -115,7 +115,4 @@ def getAD2LTeams():
                 'Division_Number': tourneyURL.split('/')[-1]
             })
     print("AD2L Teams Loaded")
-    return tourney
-
-
-getAD2LTeams()
+    return tourneys

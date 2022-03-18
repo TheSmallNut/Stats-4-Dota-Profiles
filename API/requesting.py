@@ -28,7 +28,7 @@ def getOpenDotaStats(player_ID):
 
 # Scraping what lane the player plays
 def getDotabuffStats(player_ID):
-    # Got my own user agent to prevent web-scraping prevention
+    # Got my own user agent to stop web-scraping prevention
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.109 Safari/537.36 OPR/84.0.4316.36'}
     website = requests.get(

@@ -9,19 +9,20 @@ import API.scout as scout
 import datetime
 import validators
 
-allAD2LTeams = scout.getAD2LTeams()
+allAD2LLeagues = scout.getAD2LTeams()
 
 
-def getTeamLink(teamLink):
-    if validators.url(teamLink):
-        if 'https://dota.playon.gg/teams/' in teamLink:
-            return teamLink
+def getTeamLink(teamInput):
+    if validators.url(teamInput):
+        if 'https://dota.playon.gg/teams/' in teamInput:
+            return teamInput
         else:
             return None
     else:
-        for team in allAD2LTeams:
-            if team['Name'].lower() == teamLink.lower():
-                return team['Team_Link']
+        for leagueID in allAD2LLeagues:
+            for team in allAD2LLeagues[leagueID]['Teams']:
+                if team['Name'].lower() == teamInput.lower():
+                    return team['Team_Link']
     return None
 
 
@@ -105,6 +106,8 @@ class stats(commands.Cog, name="Stats"):
             embed = discord.Embed(title=f"Slow it down!",
                                   description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
             await ctx.send(embed=embed)
+        else:
+            print(error)
 
     @commands.command(name="league", aliases=[])
     @commands.cooldown(1, 10, commands.BucketType.guild)
@@ -132,11 +135,13 @@ class stats(commands.Cog, name="Stats"):
     @commands.cooldown(1, 20, commands.BucketType.guild)
     async def _teams(self, ctx: commands.Context):
         em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
-        for league in allAD2LTeams:
+        for leagueID in allAD2LLeagues:
+            league = allAD2LLeagues[leagueID]
             teamsInLeague = ""
             for team in league['Teams']:
-                teamsInLeague += team['Name'] + "\n"
-            em.add_field(name=f'{league["name"]}', value=teamsInLeague)
+                teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
+            em.add_field(name=f'{league["Name"]}',
+                         value=teamsInLeague, inline=False)
 
         await ctx.send(embed=em)
 
