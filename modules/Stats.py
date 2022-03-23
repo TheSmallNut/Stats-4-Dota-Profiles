@@ -94,11 +94,12 @@ class stats(commands.Cog, name="Stats"):
         em = discord.Embed(
             title=f'Getting Info on "{team}"', color=0x00ff00)
         await ctx.send(embed=em, delete_after=5)
-        dotaIDS = scout.getDotaIDS(newTeamLink)
-        teamLinks = []
-        for playerID in dotaIDS:
-            currentPlayerEmbed = playerEmbed(playerID)
-            await ctx.send(file=currentPlayerEmbed['file'], embed=currentPlayerEmbed['embed'])
+        async with ctx.typing():
+            dotaIDS = scout.getDotaIDS(newTeamLink)
+            teamLinks = []
+            for playerID in dotaIDS:
+                currentPlayerEmbed = playerEmbed(playerID)
+                await ctx.send(file=currentPlayerEmbed['file'], embed=currentPlayerEmbed['embed'])
 
     @_scout.error
     async def _scout_error(self, ctx, error):
@@ -112,17 +113,18 @@ class stats(commands.Cog, name="Stats"):
     @commands.command(name="league", aliases=[])
     @commands.cooldown(1, 10, commands.BucketType.guild)
     async def _league(self, ctx: commands.Context, leagueLink):
-        leagueData = scout.getLeagueData(leagueLink)
-        leagueStandings = leagueData['standings']
-        leagueStats = leagueData['stats']
-        embed = discord.Embed(
-            title=f'{leagueStats["League_Name"]}', color=0xffffff
-        )
-        for team in leagueStandings:
-            embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
-                            value=f"[{team['Name']}]({team['Team_Link']}) - {team['Wins']}", inline=False)
-        embed.timestamp = datetime.datetime.utcnow()
-        await ctx.send(embed=embed)
+        async with ctx.typing():
+            leagueData = scout.getLeagueData(leagueLink)
+            leagueStandings = leagueData['standings']
+            leagueStats = leagueData['stats']
+            embed = discord.Embed(
+                title=f'{leagueStats["League_Name"]}', color=0xffffff
+            )
+            for team in leagueStandings:
+                embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
+                                value=f"[{team['Name']}]({team['Team_Link']}) - {team['Wins']}", inline=False)
+            embed.timestamp = datetime.datetime.utcnow()
+            await ctx.send(embed=embed)
 
     @_league.error
     async def _league_error(self, ctx, error):
@@ -134,16 +136,17 @@ class stats(commands.Cog, name="Stats"):
     @commands.command(name='teams')
     @commands.cooldown(1, 20, commands.BucketType.guild)
     async def _teams(self, ctx: commands.Context):
-        em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
-        for leagueID in allAD2LLeagues:
-            league = allAD2LLeagues[leagueID]
-            teamsInLeague = ""
-            for team in league['Teams']:
-                teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
-            em.add_field(name=f'{league["Name"]}',
-                         value=teamsInLeague, inline=False)
+        async with ctx.typing():
+            em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
+            for leagueID in allAD2LLeagues:
+                league = allAD2LLeagues[leagueID]
+                teamsInLeague = ""
+                for team in league['Teams']:
+                    teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
+                em.add_field(name=f'{league["Name"]}',
+                             value=teamsInLeague, inline=False)
 
-        await ctx.send(embed=em)
+            await ctx.send(embed=em)
 
 
 def setup(bot):

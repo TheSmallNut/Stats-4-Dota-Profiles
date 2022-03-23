@@ -67,6 +67,3 @@ def getDotabuffStats(player_ID):
     #mostCommonSplit = rolesBar.find(class_='sector role index-0').find(class_='label').getText().strip().split(" ")
     #mostCommonRole['Name'] = mostCommonSplit[1]
     # mostCommonRole['Percentage'] = mostCommonSplit[]
-
-
-getDotabuffStats(119088315)

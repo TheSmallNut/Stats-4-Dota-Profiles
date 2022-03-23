@@ -1,15 +1,38 @@
-import os
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from selenium import webdriver
+from time import sleep
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support import expected_conditions as EC
+
+options = webdriver.ChromeOptions()
+options.headless = True
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
+driver.get('https://stratz.com/players/119088315')
 
 
-rank = 81
-img = Image.open(f"{os.getcwd()}/images/ranks/{rank}.png")
-I1 = ImageDraw.Draw(img)
-textSize = 4
-myFont = ImageFont.truetype('arial.ttf', 40)
-I1.text((145 - (15 * textSize), 190),
-        f"4000", fill=(255, 255, 255), font=myFont)
-img.save(f"{os.getcwd()}/images/temp/temp.png")
-img.show()
+WebDriverWait(driver, 10).until(lambda driver: driver.execute_script(
+    'return document.readyState') == 'complete')
+
+sleep(5)
+
+
+def S(X): return driver.execute_script(
+    'return document.body.parentNode.scroll' + X)
+
+
+#driver.set_window_size(S('Width'), S('Height'))
+driver.set_window_size(1920, 1080)
+
+driver.find_element(
+    by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div/div[1]/div/div/button[2]').click()
+sleep(4)
+# stratzButton[0].click()
+#driver.find_element(by=By.TAG_NAME, value='body').screenshot('screenshot.png')
+driver.find_element(
+    by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div').screenshot('screenshot.png')
+# driver.find_element(by=By.CLASS_NAME, value='sc-gsTCUz sc-jrAGrp dZuJve bJtIwT').screenshot('screenshot.png')
+
+print("DONE")
