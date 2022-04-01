@@ -1,6 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+from lxml import etree
+from selenium import webdriver
+from time import sleep
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.service import Service
+import asyncio
+import os
 
 
 def ordinal(n): return "%d%s" % (
@@ -85,23 +94,23 @@ def playerProfile(account_id):
     }
 
 
-def getAD2LTeams():
-    page = requests.get('https://dota.playon.gg/seasons')
-    soup = BeautifulSoup(page.content, 'html.parser')
-    eachTourney = soup.find(class_='dropdown-menu tourneyDropdown')
+def getAD2LTeams(tourneyIDS):
     tourneys = {}
-    for tourney in eachTourney.find_all('li'):
-        endURL = tourney.find('a')['href']
-        tourneyURL = f'https://dota.playon.gg{endURL}'
-        tourneyID = endURL.split("/")[-1]
-        tourneyName = tourney.getText().strip()
+    for tourneyID in tourneyIDS:
+        tourneyID = str(tourneyID)
+        tourneyURL = f'https://dota.playon.gg/seasons/{tourneyID}'
+        website = requests.get(tourneyURL)
+        soupPage = BeautifulSoup(website.content, 'html.parser')
+        convertedPage = etree.HTML(str(soupPage))
+        # have to convert to allow me to check xpath for some reason
+        tourneyName = convertedPage.xpath(
+            '/html/body/div[2]/div[1]/h2')[0].text
         tourneys[str(tourneyID)] = {
             'Name': tourneyName,
             'Teams': [],
-            'ID': str(tourneyID)
+            'ID': str(tourneyID),
+            'League_Link': tourneyURL
         }
-        website = requests.get(tourneyURL)
-        soupPage = BeautifulSoup(website.content, 'html.parser')
         teamsInLeague = soupPage.find(
             class_="table table-hover table-bordered").find('tbody')
         for team in teamsInLeague('tr'):
@@ -116,3 +125,48 @@ def getAD2LTeams():
             })
     print("AD2L Teams Loaded")
     return tourneys
+
+
+def checkIfRegularSeason(tourneyPage):
+    navbarHeader = tourneyPage.find(
+        class_='navbar navbar-subnav navbar-ad2l container')
+    navTabs = navbarHeader.find(class_='nav nav-tabs')
+    tabs = navTabs.find_all(class_='tab')
+    firstTab = tabs[0].find('a').getText()
+    if firstTab == 'Regular Season':
+        return False
+    return True
+
+
+def getStratzPage(userID, sleepTime=10):
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    service = Service(ChromeDriverManager().install())
+    # /Users/james/.wdm/drivers/chromedriver/mac64/99.0.4844.51/chromedriver
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.get(f'https://stratz.com/players/{userID}')
+    WebDriverWait(driver, 10).until(lambda driver: driver.execute_script(
+        'return document.readyState') == 'complete')
+    sleep(4)
+    driver.set_window_size(1920, 1080)
+    while(True):
+        try:
+            driver.find_element(
+                by=By.XPATH, value='//html/body/div[2]/main/div[3]/div[3]/div/div[1]/div/div/button[2]').click()
+            break
+        except:
+            sleep(1)
+    # driver.find_element(by=By.TAG_NAME, value='body').screenshot(
+    #    f'{userID}.png')
+    while(True):
+        try:
+            driver.find_element(
+                by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div/div[2]/div/div[1]/div/svg/g[1]/g[1]')
+            break
+        except:
+            sleep(1)
+    sleep(1)
+    driver.find_element(
+        by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div').screenshot(f'{os.getcwd()}/images/temp/{userID}.png')
+    driver.close()
+    print(f"Done with {userID}")
