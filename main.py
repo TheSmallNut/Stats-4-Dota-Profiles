@@ -19,4 +19,4 @@ def loadModules():
 loadModules()
 
 
-bot.run(secret.DOTA_2_SCOUTING_BOT)
+bot.run(secret.TESTING_BOT)
