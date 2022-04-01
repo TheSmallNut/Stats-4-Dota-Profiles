@@ -2,10 +2,13 @@ from discord.ext import commands
 import API.secret as secret
 import os
 from discord import Intents
+import discord
 
 intents = Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix='!', intents=intents, case_insensitive=True)
+activity = discord.Game(name="AD2L Stats | !help")
+bot = commands.Bot(command_prefix='!', activity=activity,
+                   intents=intents, case_insensitive=True)
 
 
 def loadModules():
@@ -16,7 +19,6 @@ def loadModules():
                 bot.load_extension(f"modules.{filename[:-3]}")
 
 
-loadModules()
-
-
-bot.run(secret.TESTING_BOT)
+if __name__ == '__main__':
+    loadModules()
+    bot.run(secret.DOTA_2_SCOUTING_BOT)

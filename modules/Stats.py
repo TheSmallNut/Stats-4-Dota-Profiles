@@ -1,3 +1,4 @@
+from tkinter import CURRENT
 from discord.ext import commands
 import discord
 import os
@@ -8,8 +9,26 @@ import os
 import API.scout as scout
 import datetime
 import validators
+import asyncio
+from multiprocessing import Process
+from time import sleep
 
-allAD2LLeagues = scout.getAD2LTeams()
+
+CURRENT_TOURNEY_IDS = [444, 443, 442, 441, 440]
+
+allAD2LLeagues = scout.getAD2LTeams(CURRENT_TOURNEY_IDS)
+
+
+def getLeagueLink(leagueInput):
+    if validators.url(leagueInput):
+        if 'https://dota.playon.gg/seasons/' in leagueInput:
+            return leagueInput
+        else:
+            return None
+    else:
+        for league in allAD2LLeagues:
+            if leagueInput.lower() in allAD2LLeagues[league]['Name'].lower():
+                return allAD2LLeagues[league]['League_Link']
 
 
 def getTeamLink(teamInput):
@@ -76,6 +95,29 @@ def playerEmbed(playerID):
     return {'file': file, 'embed': embed}
 
 
+def getAllStratzPages(dotaIDS):
+    threads = []
+    for user in dotaIDS:
+        t = Process(target=scout.getStratzPage, args=(user, 15, ))
+        threads.append(t)
+        t.start()
+    for thread in threads:
+        thread.join()
+
+
+async def longPlayerEmbed(playerID):
+    # await scout.getStratzPage(playerID)
+    files = []
+    player = playerEmbed(playerID)
+    files.append(player['file'])
+    embed = player['embed']
+    embed.set_image(url=f"attachment://{playerID}.png")
+    file = discord.File(
+        f"{os.getcwd()}/images/temp/{playerID}.png", filename=f'{playerID}.png')
+    files.append(file)
+    return {'files': files, 'embed': embed}
+
+
 class stats(commands.Cog, name="Stats"):
     def __init__(self, bot):
         self.bot = bot
@@ -108,17 +150,40 @@ class stats(commands.Cog, name="Stats"):
                                   description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
             await ctx.send(embed=embed)
         else:
-            print(error)
+            await ctx.send(f"An error occured: {error}")
+
+    @commands.command(name='longScout', aliases=['ls'])
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    async def _longScout(self, ctx: commands.Context, *, team):
+        newTeamLink = getTeamLink(team)
+        if newTeamLink == None:
+            em = discord.Embed(
+                title=f'"{team}" is not a valid team', color=0xff0000)
+            await ctx.send(embed=em, delete_after=5)
+            return
+        await ctx.message.add_reaction('✅')
+        em = discord.Embed(
+            title=f'Getting Info on "{team}"', color=0x00ff00)
+        await ctx.send(embed=em, delete_after=5)
+        async with ctx.typing():
+            dotaIDS = scout.getDotaIDS(newTeamLink)
+            teamLinks = []
+            getAllStratzPages(dotaIDS)
+            for playerID in dotaIDS:
+                currentPlayerEmbed = await longPlayerEmbed(playerID)
+                await ctx.send(files=currentPlayerEmbed['files'], embed=currentPlayerEmbed['embed'])
+                os.remove(f"{os.getcwd()}/images/temp/{playerID}.png")
 
     @commands.command(name="league", aliases=[])
     @commands.cooldown(1, 10, commands.BucketType.guild)
-    async def _league(self, ctx: commands.Context, leagueLink):
+    async def _league(self, ctx: commands.Context, league):
         async with ctx.typing():
-            leagueData = scout.getLeagueData(leagueLink)
+            newLeagueLink = getLeagueLink(league)
+            leagueData = scout.getLeagueData(newLeagueLink)
             leagueStandings = leagueData['standings']
             leagueStats = leagueData['stats']
             embed = discord.Embed(
-                title=f'{leagueStats["League_Name"]}', color=0xffffff
+                title=f'{leagueStats["League_Name"]}', color=0x00ff00
             )
             for team in leagueStandings:
                 embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
@@ -126,27 +191,30 @@ class stats(commands.Cog, name="Stats"):
             embed.timestamp = datetime.datetime.utcnow()
             await ctx.send(embed=embed)
 
-    @_league.error
-    async def _league_error(self, ctx, error):
-        if isinstance(error, commands.CommandOnCooldown):
-            embed = discord.Embed(title=f"Slow it down!",
-                                  description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
-            await ctx.send(embed=embed)
+    # @_league.error
+    # async def _league_error(self, ctx, error):
+    #    if isinstance(error, commands.CommandOnCooldown):
+    #        embed = discord.Embed(title=f"Slow it down!",
+    #                              description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
+    #        await ctx.send(embed=embed)
+    #    else:
+    #        e = discord.Embed(
+    #            title=f"An error occured: {error}", color=0xff0000)
+    #        print(error)
+    #        await ctx.send(embed=e)
 
     @commands.command(name='teams')
     @commands.cooldown(1, 20, commands.BucketType.guild)
     async def _teams(self, ctx: commands.Context):
-        async with ctx.typing():
-            em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
-            for leagueID in allAD2LLeagues:
-                league = allAD2LLeagues[leagueID]
-                teamsInLeague = ""
-                for team in league['Teams']:
-                    teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
-                em.add_field(name=f'{league["Name"]}',
-                             value=teamsInLeague, inline=False)
-
-            await ctx.send(embed=em)
+        em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
+        for leagueID in allAD2LLeagues:
+            league = allAD2LLeagues[leagueID]
+            teamsInLeague = ""
+            for team in league['Teams']:
+                teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
+            em.add_field(name=f'{league["Name"]}',
+                         value=teamsInLeague, inline=False)
+        await ctx.send(embed=em)
 
 
 def setup(bot):
