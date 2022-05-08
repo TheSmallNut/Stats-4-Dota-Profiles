@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
 import asyncio
 import os
+from selenium.webdriver.support import expected_conditions as EC
 
 
 def ordinal(n): return "%d%s" % (
@@ -106,7 +107,7 @@ def getAD2LTeams(tourneyIDS):
         tourneyName = convertedPage.xpath(
             '/html/body/div[2]/div[1]/h2')[0].text
         tourneys[str(tourneyID)] = {
-            'Name': tourneyName,
+            'Name': tourneyName.split(" ")[1],
             'Teams': [],
             'ID': str(tourneyID),
             'League_Link': tourneyURL
@@ -141,30 +142,30 @@ def checkIfRegularSeason(tourneyPage):
 def getStratzPage(userID, sleepTime=10):
     options = webdriver.ChromeOptions()
     options.headless = True
+    #service = Service(ChromeDriverManager().install())
     service = Service(ChromeDriverManager().install())
     # /Users/james/.wdm/drivers/chromedriver/mac64/99.0.4844.51/chromedriver
     driver = webdriver.Chrome(service=service, options=options)
     driver.get(f'https://stratz.com/players/{userID}')
     WebDriverWait(driver, 10).until(lambda driver: driver.execute_script(
         'return document.readyState') == 'complete')
-    sleep(4)
     driver.set_window_size(1920, 1080)
-    while(True):
-        try:
-            driver.find_element(
-                by=By.XPATH, value='//html/body/div[2]/main/div[3]/div[3]/div/div[1]/div/div/button[2]').click()
-            break
-        except:
-            sleep(1)
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, '//html/body/div[2]/main/div[3]/div[3]/div/div[1]/div/div/button[2]')))
+        print('FOUND BUTTON')
+        driver.find_element(
+            by=By.XPATH, value='//html/body/div[2]/main/div[3]/div[3]/div/div[1]/div/div/button[2]').click()
+    except:
+        print('Loading took too much time!')
     # driver.find_element(by=By.TAG_NAME, value='body').screenshot(
     #    f'{userID}.png')
-    while(True):
-        try:
-            driver.find_element(
-                by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div/div[2]/div/div[1]/div/svg/g[1]/g[1]')
-            break
-        except:
-            sleep(1)
+    try:
+        WebDriverWait(driver, sleepTime).until(
+            EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/main/div[3]/div[3]/div/div[2]/div/div[1]/div/svg/g[1]')))
+        print('Element is ready')
+    except:
+        print('Loading took too much time!')
     sleep(1)
     driver.find_element(
         by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div').screenshot(f'{os.getcwd()}/images/temp/{userID}.png')
