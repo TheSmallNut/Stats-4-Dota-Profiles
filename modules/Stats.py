@@ -12,9 +12,12 @@ import validators
 import asyncio
 from multiprocessing import Process
 from time import sleep
+from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_choice, create_option
 
 
-CURRENT_TOURNEY_IDS = [444, 443, 442, 441, 440]
+CURRENT_TOURNEY_IDS = [453, 454, 455, 456, 457]
+GUILDS = []
 
 allAD2LLeagues = scout.getAD2LTeams(CURRENT_TOURNEY_IDS)
 
@@ -65,6 +68,7 @@ def rankToFile(embed, rank, leaderboard):
         file = discord.File(
             f"{os.getcwd()}/images/ranks/{rank}.png", filename=f'{rank}.png')
         embed.set_thumbnail(url=f"attachment://{rank}.png")
+        # set_thumbnail
     else:
         rank = immortalRank(rank, leaderboard)
         img = Image.open(f"{os.getcwd()}/images/ranks/{rank}.png")
@@ -107,7 +111,7 @@ def getAllStratzPages(dotaIDS):
         
 
 
-async def longPlayerEmbed(playerID):
+def longPlayerEmbed(playerID):
     # await scout.getStratzPage(playerID)
     files = []
     player = playerEmbed(playerID)
@@ -172,7 +176,7 @@ class stats(commands.Cog, name="Stats"):
             teamLinks = []
             getAllStratzPages(dotaIDS)
             for playerID in dotaIDS:
-                currentPlayerEmbed = await longPlayerEmbed(playerID)
+                currentPlayerEmbed = longPlayerEmbed(playerID)
                 await ctx.send(files=currentPlayerEmbed['files'], embed=currentPlayerEmbed['embed'])
                 os.remove(f"{os.getcwd()}/images/temp/{playerID}.png")
 
@@ -205,6 +209,18 @@ class stats(commands.Cog, name="Stats"):
     #        print(error)
     #        await ctx.send(embed=e)
 
+    @cog_ext.cog_slash(name="teams", description="Sends all teams in AD2L", guild_ids=GUILDS, options=[])
+    async def _teams(self, ctx: SlashContext):
+        async with ctx.typing():
+            teams = scout.getTeams()
+            embed = discord.Embed(
+                title=f"Teams", color=0x00ff00)
+            for team in teams:
+                embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
+                                value=f"[{team['Name']}]({team['Team_Link']})", inline=False)
+            embed.timestamp = datetime.datetime.utcnow()
+            await ctx.send(embed=embed)
+
     @commands.command(name='teams')
     @commands.cooldown(1, 20, commands.BucketType.guild)
     async def _teams(self, ctx: commands.Context):
@@ -217,6 +233,15 @@ class stats(commands.Cog, name="Stats"):
             em.add_field(name=f'{league["Name"]}',
                          value=teamsInLeague, inline=False)
         await ctx.send(embed=em)
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        GUILDS = []
+        GUILD_NAMES = []
+        for guild in self.bot.guilds:
+            GUILDS.append(guild.id)
+            GUILD_NAMES.append(guild.name)
+        print(GUILD_NAMES)
 
 
 def setup(bot):
