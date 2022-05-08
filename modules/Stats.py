@@ -98,11 +98,13 @@ def playerEmbed(playerID):
 def getAllStratzPages(dotaIDS):
     threads = []
     for user in dotaIDS:
-        t = Process(target=scout.getStratzPage, args=(user, 15, ))
-        threads.append(t)
-        t.start()
-    for thread in threads:
-        thread.join()
+        #t = Process(target=scout.getStratzPage, args=(user, 15, ))
+        #threads.append(t)
+        #t.start()
+        scout.getStratzPage(user)
+    #for thread in threads:
+    #    thread.join()
+        
 
 
 async def longPlayerEmbed(playerID):

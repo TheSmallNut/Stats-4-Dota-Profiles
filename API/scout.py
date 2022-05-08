@@ -152,7 +152,7 @@ def getStratzPage(userID, sleepTime=10):
     while(True):
         try:
             driver.find_element(
-                by=By.XPATH, value='//html/body/div[2]/main/div[3]/div[3]/div/div[1]/div/div/button[2]').click()
+                by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div[1]/div[1]/div/div/button[2]').click()
             break
         except:
             sleep(1)
@@ -164,9 +164,9 @@ def getStratzPage(userID, sleepTime=10):
                 by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div/div[2]/div/div[1]/div/svg/g[1]/g[1]')
             break
         except:
-            sleep(1)
+            sleep(5)
     sleep(1)
     driver.find_element(
-        by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div').screenshot(f'{os.getcwd()}/images/temp/{userID}.png')
+        by=By.XPATH, value='//*[@id="root"]/main/div[3]/div[3]/div[1]').screenshot(f'{os.getcwd()}/images/temp/{userID}.png')
     driver.close()
     print(f"Done with {userID}")
