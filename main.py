@@ -9,7 +9,7 @@ from discord_slash import SlashCommand
 
 intents = Intents.default()
 intents.members = True
-activity = discord.Game(name="AD2L Stats | !help")
+activity = discord.Game(name="AD2L Stats")
 bot = commands.Bot(command_prefix='!', activity=activity,
                    intents=intents, case_insensitive=True)
 slash = SlashCommand(bot, sync_commands=True)
@@ -25,4 +25,4 @@ def loadModules():
 if __name__ == '__main__':
     # bot.remove_command('help')
     loadModules()
-    bot.run(secret.DOTA_2_SCOUTING_BOT)
+    bot.run(secret.TEST)
