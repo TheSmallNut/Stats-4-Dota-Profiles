@@ -1,9 +1,11 @@
+#!/usr/bin/python3
 from discord.ext import commands
 import API.secret as secret
 import os
 from discord import Intents
 import discord
 from discord_slash import SlashCommand
+
 
 intents = Intents.default()
 intents.members = True
@@ -17,12 +19,10 @@ def loadModules():
     # Change "cogs" to your folder name
     for filename in os.listdir("./modules"):
         if filename.endswith(".py"):
-            if 'copy' not in filename:
-                bot.load_extension(f"modules.{filename[:-3]}")
+            bot.load_extension(f"modules.{filename[:-3]}")
 
 
 if __name__ == '__main__':
     # bot.remove_command('help')
     loadModules()
-    bot.remove_command("longScout")
     bot.run(secret.DOTA_2_SCOUTING_BOT)

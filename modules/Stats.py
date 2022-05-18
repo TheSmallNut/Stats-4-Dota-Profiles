@@ -1,238 +1,99 @@
-from tkinter import CURRENT
 from discord.ext import commands
 import discord
-import os
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
-import os
-import API.scout as scout
-import datetime
-import validators
-import asyncio
-from multiprocessing import Process
-from time import sleep
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_choice, create_option
+import API.scouting as scouting
+import API.embeds as embeds
 
-
-CURRENT_TOURNEY_IDS = [453, 454, 455, 456, 457]
 GUILDS = []
-
-allAD2LLeagues = scout.getAD2LTeams(CURRENT_TOURNEY_IDS)
-
-
-def getLeagueLink(leagueInput):
-    if validators.url(leagueInput):
-        if 'https://dota.playon.gg/seasons/' in leagueInput:
-            return leagueInput
-        else:
-            return None
-    else:
-        for league in allAD2LLeagues:
-            if leagueInput.lower() in allAD2LLeagues[league]['Name'].lower():
-                return allAD2LLeagues[league]['League_Link']
+TOURNEY_IDS = [458, 457, 456, 455, 454, 453]
+ERROR_LOGGING_CHANNEL = 976043428393668608
 
 
-def getTeamLink(teamInput):
-    if validators.url(teamInput):
-        if 'https://dota.playon.gg/teams/' in teamInput:
-            return teamInput
-        else:
-            return None
-    else:
-        for leagueID in allAD2LLeagues:
-            for team in allAD2LLeagues[leagueID]['Teams']:
-                if team['Name'].lower() == teamInput.lower():
-                    return team['Team_Link']
-    return None
+# Will be ran whenever the bot is run and it will get all the teams from AD2L
+AD2LLEAGUES = scouting.getAD2LTeams(TOURNEY_IDS)
 
 
-def immortalRank(rank, leaderboard):
-    if rank != 80 or leaderboard == None:
-        return rank
-    if leaderboard == 1:
-        return 84
-    elif leaderboard <= 10:
-        return 83
-    elif leaderboard <= 100:
-        return 82
-    elif leaderboard <= 1000:
-        return 81
-    else:
-        return 80
-
-
-def rankToFile(embed, rank, leaderboard):
-    if leaderboard == None:
-        file = discord.File(
-            f"{os.getcwd()}/images/ranks/{rank}.png", filename=f'{rank}.png')
-        embed.set_thumbnail(url=f"attachment://{rank}.png")
-        # set_thumbnail
-    else:
-        rank = immortalRank(rank, leaderboard)
-        img = Image.open(f"{os.getcwd()}/images/ranks/{rank}.png")
-        I1 = ImageDraw.Draw(img)
-        textSize = len(str(leaderboard))
-        myFont = ImageFont.truetype('Arial.ttf', 40)
-        I1.text((145 - (15 * textSize), 190),
-                f"{leaderboard}", fill=(255, 255, 255), font=myFont)
-        img.save(f"{os.getcwd()}/images/temp/temp.png")
-        file = discord.File(
-            f"{os.getcwd()}/images/temp/temp.png", filename=f'temp.png')
-        embed.set_thumbnail(url=f"attachment://temp.png")
-
-    return file
-
-
-def playerEmbed(playerID):
-    player = scout.playerProfile(playerID)
-    dotabuffLink = scout.IDToDotabuff(playerID)
-    embed = discord.Embed(
-        title=f'{player["playerName"]}', url=f'{dotabuffLink}', color=0xfcba03)
-    embed.set_author(
-        name=player['playerName'], icon_url=player['icon_url'], url=player['steam'])
-    embed.add_field(
-        name='Links', value=f"[Dotabuff]({scout.IDToDotabuff(playerID, False)})\n[Esports]({dotabuffLink}) \n [Opendota](https://www.opendota.com/players/{playerID}) \n [Stratz](https://stratz.com/players/{playerID})", inline=True)
-    file = rankToFile(embed, player['rank'], player['leaderboard'])
-    #embed.timestamp = datetime.datetime.utcnow()
-    return {'file': file, 'embed': embed}
-
-
-def getAllStratzPages(dotaIDS):
-    threads = []
-    for user in dotaIDS:
-        #t = Process(target=scout.getStratzPage, args=(user, 15, ))
-        #threads.append(t)
-        #t.start()
-        scout.getStratzPage(user)
-    #for thread in threads:
-    #    thread.join()
-        
-
-
-def longPlayerEmbed(playerID):
-    # await scout.getStratzPage(playerID)
-    files = []
-    player = playerEmbed(playerID)
-    files.append(player['file'])
-    embed = player['embed']
-    embed.set_image(url=f"attachment://{playerID}.png")
-    file = discord.File(
-        f"{os.getcwd()}/images/temp/{playerID}.png", filename=f'{playerID}.png')
-    files.append(file)
-    return {'files': files, 'embed': embed}
 
 
 class stats(commands.Cog, name="Stats"):
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command(name="scout", aliases=[])
-    @commands.cooldown(1, 5, commands.BucketType.guild)
-    @commands.has_permissions()
-    async def _scout(self, ctx: commands.Context, *, team):
-        newTeamLink = getTeamLink(team)
-        if newTeamLink == None:
-            em = discord.Embed(
-                title=f'"{team}" is not a valid team', color=0xff0000)
-            await ctx.send(embed=em, delete_after=5)
-            return
-        await ctx.message.add_reaction('✅')
-        em = discord.Embed(
-            title=f'Getting Info on "{team}"', color=0x00ff00)
-        await ctx.send(embed=em, delete_after=5)
-        async with ctx.typing():
-            dotaIDS = scout.getDotaIDS(newTeamLink)
-            teamLinks = []
-            for playerID in dotaIDS:
-                currentPlayerEmbed = playerEmbed(playerID)
-                await ctx.send(file=currentPlayerEmbed['file'], embed=currentPlayerEmbed['embed'])
-
-    @_scout.error
-    async def _scout_error(self, ctx, error):
-        if isinstance(error, commands.CommandOnCooldown):
-            embed = discord.Embed(title=f"Slow it down!",
-                                  description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
+        
+    @cog_ext.cog_slash(description="Sends teams in a certain league with links to their AD2L page", options = [
+        create_option(
+            name = "league", 
+            description = "The league you want to get teams from | Can be sent as a URL from AD2L or the League Name", 
+            required = True, 
+            option_type = 3
+            )])
+    async def league(self, ctx: SlashContext, league: str):
+        try:
+            await ctx.send(embed = embeds.message(f"Getting teams from {league}", color = "yellow"))
+            leagueURL = scouting.getLeagueLink(league, AD2LLEAGUES)
+            if leagueURL == None:
+                await ctx.send(embed = embeds.message(f"Could not find league {league}", color = 0xff0000))
+                return
+            print(leagueURL)
+            data = scouting.leagueData(leagueURL)
+            embed = embeds.leagueEmbed(data)
             await ctx.send(embed=embed)
-        else:
-            await ctx.send(f"An error occured: {error}")
+        except Exception as e:
+            channel = self.bot.get_channel(976043428393668608)
+            embed = embeds.message(f"ERROR: {str(repr(e))} \nCommand: {ctx.name}\nARGS: {ctx.args}", "red")
+            await channel.send(embed=embed)
+    
+    @cog_ext.cog_slash(description="Sends all teams in every league without links", options=[])
+    async def teams(self, ctx: SlashContext):
+        try:
+            await ctx.send(embed = embeds.message("Getting teams", color = "yellow"))
+            await ctx.send(embed=embeds.teamsEmbed(AD2LLEAGUES))
+        except Exception as e:
+            channel = self.bot.get_channel(976043428393668608)
+            embed = embeds.message(f"ERROR: {str(repr(e))} \nCommand: {ctx.name}\nARGS: {ctx.args}", "red")
+            await channel.send(embed=embed)
+    
+    @cog_ext.cog_slash(description="Scouts one team and returns current ranks", options=[
+        create_option(
+            name = "team",
+            description = "The team you want to scout | Can be sent as a link from AD2L or the Name",
+            required = True,
+            option_type = 3
+            )])
+    async def scout(self, ctx: SlashContext, team: str):
+        try:
+            await ctx.send(embed = embeds.message(f"Scouting {team}", color = "yellow"))
+            teamURL = scouting.getScoutLink(team, AD2LLEAGUES)
+            if teamURL == None:
+                await ctx.send(embed = embeds.message(f"Could not find team {team}", color = 0xff0000))
+                return
+            for playerID in scouting.getDotaIDS(teamURL):
+                playerStats = scouting.scoutPlayerJSON(playerID)
+                playerEmbedAndFile = embeds.playerEmbedAndFile(playerStats)
+                await ctx.send(file=playerEmbedAndFile['file'], embed=playerEmbedAndFile['embed'])
+        except Exception as e:
+            channel = self.bot.get_channel(976043428393668608)
+            embed = embeds.message(f"ERROR: {str(repr(e))} \nCommand: {ctx.name}\nARGS: {ctx.args}", "red")
+            await channel.send(embed=embed)
 
-    @commands.command(name='longScout', aliases=['ls'])
-    @commands.cooldown(1, 20, commands.BucketType.guild)
-    async def _longScout(self, ctx: commands.Context, *, team):
-        newTeamLink = getTeamLink(team)
-        if newTeamLink == None:
-            em = discord.Embed(
-                title=f'"{team}" is not a valid team', color=0xff0000)
-            await ctx.send(embed=em, delete_after=5)
-            return
-        await ctx.message.add_reaction('✅')
-        em = discord.Embed(
-            title=f'Getting Info on "{team}"', color=0x00ff00)
-        await ctx.send(embed=em, delete_after=5)
-        async with ctx.typing():
-            dotaIDS = scout.getDotaIDS(newTeamLink)
-            teamLinks = []
-            getAllStratzPages(dotaIDS)
-            for playerID in dotaIDS:
-                currentPlayerEmbed = longPlayerEmbed(playerID)
-                await ctx.send(files=currentPlayerEmbed['files'], embed=currentPlayerEmbed['embed'])
-                os.remove(f"{os.getcwd()}/images/temp/{playerID}.png")
+    @cog_ext.cog_slash(description="Refreshes all AD2L Teams that are already there", options=[])
+    async def refresh(self, ctx: SlashContext):
+        try:
+            await ctx.send(embed = embeds.message("Attempting to refresh now!", "yellow"))
+            global AD2LLEAGUES
+            AD2LLEAGUES = scouting.getAD2LTeams(TOURNEY_IDS)
+            await ctx.send(embed = embeds.message("Cache Refreshed, new teams should now be added to the roster"))
+        except Exception as e:
+            try:
+                embed = embeds.message("ERROR Refreshing Cache, please contact TheSmallNut", "red")
+                await ctx.send(embed = embed)
+            except Exception as E:
+                channel = self.bot.get_channel(976043428393668608)
+                await channel.send(embed=embeds.message(f"ERROR: {str(repr(e))} \nCommand: {ctx.name}\nARGS: {ctx.args}", "red"))
+            channel = self.bot.get_channel(976043428393668608)
+            await channel.send(embed=embeds.message(f"ERROR: {str(repr(e))} \nCommand: {ctx.name}\nARGS: {ctx.args}", "red"))
 
-    @commands.command(name="league", aliases=[])
-    @commands.cooldown(1, 10, commands.BucketType.guild)
-    async def _league(self, ctx: commands.Context, league):
-        async with ctx.typing():
-            newLeagueLink = getLeagueLink(league)
-            leagueData = scout.getLeagueData(newLeagueLink)
-            leagueStandings = leagueData['standings']
-            leagueStats = leagueData['stats']
-            embed = discord.Embed(
-                title=f'{leagueStats["League_Name"]}', color=0x00ff00
-            )
-            for team in leagueStandings:
-                embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
-                                value=f"[{team['Name']}]({team['Team_Link']}) - {team['Wins']}", inline=False)
-            embed.timestamp = datetime.datetime.utcnow()
-            await ctx.send(embed=embed)
 
-    # @_league.error
-    # async def _league_error(self, ctx, error):
-    #    if isinstance(error, commands.CommandOnCooldown):
-    #        embed = discord.Embed(title=f"Slow it down!",
-    #                              description=f"Try again in {error.retry_after:.2f}s.", color=0xff0000)
-    #        await ctx.send(embed=embed)
-    #    else:
-    #        e = discord.Embed(
-    #            title=f"An error occured: {error}", color=0xff0000)
-    #        print(error)
-    #        await ctx.send(embed=e)
-
-    @cog_ext.cog_slash(name="teams", description="Sends all teams in AD2L", guild_ids=GUILDS, options=[])
-    async def _teams(self, ctx: SlashContext):
-        async with ctx.typing():
-            teams = scout.getTeams()
-            embed = discord.Embed(
-                title=f"Teams", color=0x00ff00)
-            for team in teams:
-                embed.add_field(name=f"{scout.ordinal(int(team['Place']))}",
-                                value=f"[{team['Name']}]({team['Team_Link']})", inline=False)
-            embed.timestamp = datetime.datetime.utcnow()
-            await ctx.send(embed=embed)
-
-    @commands.command(name='teams')
-    @commands.cooldown(1, 20, commands.BucketType.guild)
-    async def _teams(self, ctx: commands.Context):
-        em = discord.Embed(title='Current Teams in AD2L', color=0x00ff00)
-        for leagueID in allAD2LLeagues:
-            league = allAD2LLeagues[leagueID]
-            teamsInLeague = ""
-            for team in league['Teams']:
-                teamsInLeague += f"**{scout.ordinal(int(team['Place']))}** - {team['Name']}\n"
-            em.add_field(name=f'{league["Name"]}',
-                         value=teamsInLeague, inline=False)
-        await ctx.send(embed=em)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -242,7 +103,7 @@ class stats(commands.Cog, name="Stats"):
             GUILDS.append(guild.id)
             GUILD_NAMES.append(guild.name)
         print(GUILD_NAMES)
-
+    
 
 def setup(bot):
     print("Stats Cog Loaded")
